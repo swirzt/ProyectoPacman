@@ -64,7 +64,7 @@ def tinyMazeSearch(problem):
     """
     from game import Directions
     s = Directions.SOUTH
-    w = Directions.WESTpyth
+    w = Directions.WEST
     return  [s,s,w,s,w,w,s,w]
 
 def search(problem, fringe):
@@ -106,6 +106,8 @@ def depthFirstSearch(problem):
     # print "Start's successors:", problem.getSuccessors(problem.getStartState())
     # print "-------------_FIN-------------------"
 
+
+    # Implementamos el dfs pero notamos que ya existia una funcion simple para buscar
     # listaNodos = util.Stack()
     # listaNodos.push((problem.getStartState(),[],0))
     # visitados = set()
@@ -126,6 +128,7 @@ def breadthFirstSearch(problem):
     """
     Search the shallowest nodes in the search tree first.
     """
+    # Implementamos el bfs pero notamos que ya existia una funcion simple para buscar
     # listaNodos = util.Queue()
     # listaNodos.push((problem.getStartState(),[],0))
     # visitados = set()
@@ -144,6 +147,8 @@ def breadthFirstSearch(problem):
 
 def uniformCostSearch(problem):
     "Search the node of least total cost first."
+
+    # Podriamos modificar la funcion search para implementar este caso y el A* pero no nos parecio util
     listaNodos = util.PriorityQueue()
     listaNodos.push((problem.getStartState(),[],0),0)
     visitados = set()

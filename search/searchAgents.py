@@ -349,8 +349,30 @@ class CornersProblem(search.SearchProblem):
         return len(actions)
         
 
-heuristicaCalculada = dict()
 
+"""
+La heuristica que desarrollamos es la siguiente:
+
+Calculamos la distancia de Manhattan entre el pacman y una esquina sin visitar. 
+Luego posicionamos el pacman en dicha esquina y calculamos la distancia de Manhattan al resto de las esquinas sin visitar,
+cambiando la posicion del pacman a la nueva esquina en cada caso.
+Guardamos esa suma de costos y luego volvemos a hacer el calculo cambiando la esquina inicial (si la hubiera).
+Al final tomamos la ruta con menor costo y ese es el valor de la heuristica
+
+Efectivamente, el camino mas corto que puede llegar a hacer el pacman es ignorar todas las paredes y recorrer
+el laberinto pegado a los bordes, sin tener en cuenta el esquivar los obstaculos que se le presenten en el medio.
+
+De esta forma, la heuristica es consistente (siempre consideramos el camino mas corto posible, probado mediante
+un fragmento en el codigo) y admisible (el costo del camino estimado nunca es mayor al costo real porque 
+ignoramos los obstaculos).
+
+Habiamos probado posicionandonos solamente en la esquina mas cercana, pero tinyCorners nos demostro que 
+no es consistente, pues en un caso especifico (habiendo visitado la esquina superior derecha y ubicandose en (3,1))
+se pierde la consistencia
+"""
+
+
+heuristicaCalculada = dict()
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -364,16 +386,18 @@ def cornersHeuristic(state, problem):
     on the shortest path from the state to a goal of the problem; i.e.
     it should be admissible (as well as consistent).
     """
+    # Utilizamos un diccionario que almacena costos para estados ya calculados
+    # Nos ahorra tiempo ya que nuestra heuristica tiende a repetir solicitudes
     if heuristicaCalculada.has_key(state):
         return heuristicaCalculada[state]
     
     corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
     (x, y), (v1, v2, v3, v4) = actual, esquinasVisitadas = state
     if v1 and v2 and v3 and v4: return 0
 
-    #Usando mazeDistance expandimos "129" nodos TRAMPA
-    # Consistente 692 nodos crashea en tiny
+    # Primer intento de heuristica
+    # 692 nodos (No es consistente en tinyMaze -> No es consistente)
+    # Usando mazeDistance expandimos "129" nodos (TRAMPA: No toma en cuenta la expansion de nodos al buscar la distancia real)
     # costos = [999999,999999,999999,999999]
     # for i in range(4):
     #     if not esquinasVisitadas[i]:
@@ -382,14 +406,8 @@ def cornersHeuristic(state, problem):
     # minIndex = costos.index(minCosto)
     # costoHeu = minCosto + cornersHeuristic((corners[minIndex],replaceTupla(esquinasVisitadas,minIndex,True)),problem)
     
-    # 741 nodos consistente pero no crashea en tiny, es eficiente porque tengo el diccionario
-    real = []
-    for i in range(4):
-        if not esquinasVisitadas[i]:
-            man = util.manhattanDistance(corners[i], actual)
-            real.append(man + cornersHeuristic((corners[i],replaceTupla(esquinasVisitadas,i,True)),problem))
-    costoHeu = min(real)
-    
+    # Segundo intento de heuristica
+    # Implementacion parecida al primer intento pero elegimos comenzar por la esquina que tenga menos paredes entre el agente y ella
     # Elegimos la esquina que tenga menos paredes entre el pacman y ella, no es consistente :(
     # valorParedMinimo = 999999
     # index = 0
@@ -415,32 +433,42 @@ def cornersHeuristic(state, problem):
     #         if paredesActual < valorParedMinimo:
     #             index = i
     #             valorParedMinimo = paredesActual
-    
     # minIndex = index
     # minCosto = util.manhattanDistance(corners[minIndex], actual)
     # costoHeu = minCosto + cornersHeuristic((corners[minIndex],replaceTupla(esquinasVisitadas,minIndex,True)),problem)
+
+    # Tercer intento FINAL
+    # 741 nodos consistente comprobada, es eficiente porque tengo el diccionario
+    real = []
+    for i in range(4):
+        if not esquinasVisitadas[i]:
+            man = util.manhattanDistance(corners[i], actual)
+            real.append(man + cornersHeuristic((corners[i],replaceTupla(esquinasVisitadas,i,True)),problem))
+    costoHeu = min(real)
             
     heuristicaCalculada[state] = costoHeu
     return costoHeu
 
 
-def distanciaEsquinas(punto,corners,esquinasVisitadas):
-    costos = [999999,999999,999999,999999]
-    for i in range(4):
-        if not esquinasVisitadas[i]:
-            costos[i] = util.manhattanDistance(corners[i], punto)
-    return costos
+# Funciones para la segunda implementacion de heuristica
+# def distanciaEsquinas(punto,corners,esquinasVisitadas):
+#     costos = [999999,999999,999999,999999]
+#     for i in range(4):
+#         if not esquinasVisitadas[i]:
+#             costos[i] = util.manhattanDistance(corners[i], punto)
+#     return costos
+
+# def signo(num):
+#     if num == 0:
+#         return 0
+#     elif num > 0:
+#         return 1
+#     else:
+#         return -1
 
 def replaceTupla(tupla,i,val):
+    "Cambia el valor i-esimo de una tupla por val"
     return tupla[:i] + (val,) + tupla[i+1:]
-
-def signo(num):
-    if num == 0:
-        return 0
-    elif num > 0:
-        return 1
-    else:
-        return -1
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
